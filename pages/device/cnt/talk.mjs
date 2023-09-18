@@ -1,4 +1,4 @@
-import jose from "node-jose";
+import base64uri from "../../../base64uri.mjs";
 
 function myinput(){
   try{
@@ -7,7 +7,7 @@ function myinput(){
     if(str == ""){
       return {};
     }else{
-      const s = jose.util.base64url.decode(str.substring(1));
+      const s = base64uri.decode(str.substring(1));
       return JSON.parse(s);
     }
   }catch(e){
@@ -31,17 +31,17 @@ async function do_req(api, obj){
 
 async function onLoad(e){
   const target_data = myinput();
-  const obj = jose.util.base64url.encode(target_data.d);
+  const obj = base64uri.encode(target_data.d);
   const res = await do_req(target_data.f, obj);
 
   /* calc response_data */
-  const s = jose.util.base64url.decode(res);
+  const s = base64uri.decode(res);
   const b = {
     r: s,
     ses: target_data.ses
   };
   const br = JSON.stringify(b);
-  const response_data = jose.util.base64url.encode(br);
+  const response_data = base64uri.encode(br);
 
   /* Navigate back to nestsite */
   window.location.href = target_data.cb + "#" + response_data;

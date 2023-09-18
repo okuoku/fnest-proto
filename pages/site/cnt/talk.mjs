@@ -1,4 +1,4 @@
-import jose from "node-jose";
+import base64uri from "../../../base64uri.mjs";
 
 let ses = false;
 
@@ -9,7 +9,7 @@ function myinput(){
     if(str == ""){
       return {};
     }else{
-      const s = jose.util.base64url.decode(str.substring(1));
+      const s = base64uri.decode(str.substring(1));
       return JSON.parse(s);
     }
   }catch(e){
@@ -64,10 +64,10 @@ function action(func, data){
     const req = {
         cb: myurl,
         f: func,
-        d: jose.util.base64url.decode(data),
+        d: base64uri.decode(data),
         ses: ses
     };
-    const target_data = jose.util.base64url.encode(JSON.stringify(req));
+    const target_data = base64uri.encode(JSON.stringify(req));
 
     window.location.href = cb + "#" + target_data;
 }
