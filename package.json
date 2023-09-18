@@ -16,6 +16,8 @@
     "node-jose": "^2.2.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.4",
+    "@rollup/plugin-node-resolve": "^15.2.1",
     "@web/rollup-plugin-html": "^2.0.1",
     "rollup": "^3.29.2"
   }
