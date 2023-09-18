@@ -7,7 +7,9 @@ import terser from "@rollup/plugin-terser";
 
 const opts_site = {
     plugins: [
-        commonjs(),
+        commonjs({
+                 ignore: ["crypto"]
+        }),
         htmlplugin({
                    input: ["index.html", "cnt/*.html"],
                    strictCSPInlineScripts: true,
@@ -16,7 +18,7 @@ const opts_site = {
         }),
         nodeResolve({
                     browser: true,
-                    preferBuiltins: false
+                    preferBuiltins: false,
         }),
         /*
         terser({
