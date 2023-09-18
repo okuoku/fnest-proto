@@ -2,6 +2,7 @@ import {rollup} from "rollup";
 import {rollupPluginHTML as htmlplugin} from "@web/rollup-plugin-html";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from '@rollup/plugin-commonjs';
+import terser from "@rollup/plugin-terser";
 
 
 const opts_site = {
@@ -16,12 +17,19 @@ const opts_site = {
         nodeResolve({
                     browser: true,
                     preferBuiltins: false
+        }),
+        /*
+        terser({
+               ecma: 2020,
+               module: true,
+               warnings: true
         })
+        */
     ]
 };
 
 const output_site = {
-    format: "iife", dir: "build_site"
+    format: "es", dir: "build_site"
 };
 
 const opts_dev = {
@@ -36,12 +44,19 @@ const opts_dev = {
         nodeResolve({
                     browser: true,
                     preferBuiltins: false
+        }),
+        /*
+        terser({
+               ecma: 2020,
+               module: true,
+               warnings: true
         })
+        */
     ]
 };
 
 const output_dev = {
-    format: "iife", dir: "build_device"
+    format: "es", dir: "build_device"
 };
 
 async function run(){
