@@ -64,16 +64,20 @@ function action(func, data){
     const myurl = window.location.protocol + "//" + 
         window.location.host + window.location.pathname;
 
-    const req = {
-        cb: myurl,
-        f: func,
-        d: data,
-        ses: ses
-    };
+    if(func == "close"){
+        window.close();
+    }else{
+        const req = {
+            cb: myurl,
+            f: func,
+            d: data,
+            ses: ses
+        };
 
-    const target_data = base64uri.encode(JSON.stringify(req));
+        const target_data = base64uri.encode(JSON.stringify(req));
 
-    window.location.href = cb + "#" + target_data;
+        window.location.href = cb + "#" + target_data;
+    }
 }
 
 function checkNewMessage(){

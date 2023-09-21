@@ -29,6 +29,8 @@ async function newRTC(ses,req){
                 s: peer.localDescription.sdp,
                 ident: ident
             });
+            /* We're done */
+            await closesession(ses);
         }
     }
 
@@ -164,6 +166,16 @@ async function encryptpayload(ses, input){
         console.log("Plaintext", ses, input);
         return input;
     }
+}
+
+
+async function closesession(ses){
+    const prefix = "nestDev." + ses + ".";
+    console.log("Close session",ses);
+    const mycnt = sessions[ses].cnt + 1;
+    sessions[ses].cnt = mycnt;
+    post(ses, mycnt, {func: "close"});
+    delete sessions[ses];
 }
 
 async function runrequest(ses, func, input){
