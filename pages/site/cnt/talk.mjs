@@ -3,23 +3,26 @@ import base64uri from "../../../base64uri.mjs";
 let ses = false;
 
 function myinput(){
-  try{
-    const log = document.location;
-    const str = location.hash;
-    if(str == ""){
-      return {};
-    }else{
-      const s = base64uri.decode(str.substring(1));
-      return JSON.parse(s);
+    try{
+        const log = document.location;
+        const str = location.hash;
+        if(str == ""){
+            return {};
+        }else{
+            console.log("input", str);
+            const s = base64uri.decode(str.substring(1));
+            return JSON.parse(s);
+        }
+    }catch(e){
+        console.warn("Invalid hash");
+        return {};
     }
-  }catch(e){
-    console.warn("Invalid hash");
-    return {};
-  }
 }
+
 function getval(name){
-    const prefix = "nestdev." + ses + ".";
+    const prefix = "nestDev." + ses + ".";
     const str = window.localStorage.getItem(prefix + name);
+    console.log("Getval",ses,name,str);
     if(str){
         const obj = JSON.parse(str);
         return obj;
@@ -35,13 +38,13 @@ function getInbox(){
     };
 }
 function clearInbox(){
-    const prefix = "nestdev." + ses + ".";
-    window.localStorage.setItem(prefix + "inbox", "false");
+    const prefix = "nestDev." + ses + ".";
+    window.localStorage.setItem(prefix + "inbox", "null");
 }
 
 function setOutBox(obj){
-    const prefix = "nestdev." + ses + ".";
-    const outcnt = getval("out");
+    const prefix = "nestDev." + ses + ".";
+    let outcnt = getval("out");
     if(! outcnt){
         outcnt = 1;
     }else{
@@ -56,17 +59,18 @@ function setOutBox(obj){
 }
 
 function action(func, data){
-    const prefix = "nestdev." + ses + ".";
-    const cb = window.localStorage.getItem(prefix + "cb");
+    const prefix = "nestDev." + ses + ".";
+    const cb = getval("cb") + "/cnt/talk.html";
     const myurl = window.location.protocol + "//" + 
         window.location.host + window.location.pathname;
 
     const req = {
         cb: myurl,
         f: func,
-        d: base64uri.decode(data),
+        d: data,
         ses: ses
     };
+
     const target_data = base64uri.encode(JSON.stringify(req));
 
     window.location.href = cb + "#" + target_data;
@@ -74,13 +78,15 @@ function action(func, data){
 
 function checkNewMessage(){
     const cur = getInbox();
-    if(cur.in == cur.inbox.cnt){
+    console.log("Check New Message", cur);
+    if(cur.in != 0 && cur.inbox != null && cur.in == cur.inbox.cnt){
         clearInbox();
         action(cur.inbox.func, cur.inbox.data);
     }
 }
 
 async function onStorage(e){
+    console.log("onStorage",e);
     checkNewMessage();
 }
 
@@ -95,6 +101,7 @@ async function onLoad(e){
     ses = session;
 
     if(session_data.r){
+        console.log("Resp.", session_data);
         setOutBox(session_data.r);
     }
 

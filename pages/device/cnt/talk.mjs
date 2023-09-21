@@ -17,27 +17,28 @@ function myinput(){
 }
 
 async function do_req(api, obj){
-  const res = await fetch("/" + api, {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain",
-    },
-    body: obj
-  });
-  const text = await res.text();
+    console.log("REQUEST(Device)", api, obj);
+    const res = await fetch("/" + api, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain",
+        },
+        body: obj
+    });
 
-  return text;
+    const text = await res.text();
+    console.log("Res.(Device)", text);
+    return text;
 }
 
 async function onLoad(e){
   const target_data = myinput();
-  const obj = base64uri.encode(target_data.d);
-  const res = await do_req(target_data.f, obj);
+  const obj = target_data.d;
+  const res = await do_req(target_data.f, obj); // => base64url
 
   /* calc response_data */
-  const s = base64uri.decode(res);
   const b = {
-    r: s,
+    r: res,
     ses: target_data.ses
   };
   const br = JSON.stringify(b);
