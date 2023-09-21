@@ -1,12 +1,15 @@
 import jose from "node-jose";
 
-const runbuttonEl = document.getElementById("runbutton");
+const setdevicekeyEl = document.getElementById("setdevicekey");
+const runlinkEl = document.getElementById("runlink");
+
 const devicekeyEl = document.getElementById("devicekey");
 const BASEURL = window.location.protocol + "//" +
         window.location.host + window.location.pathname.replace("/index.html","");
 
 const sessions = {};
 const waiters = {};
+let devicekey = false; // FIXME: Allow multiple keys
 
 /* WebRTC states */
 const ICE_SERVERS = {
@@ -150,29 +153,6 @@ function onStorage(){
     }
 }
 
-async function newsession(uri, signkey){ // => ses
-    // FIXME: Register session
-    const ses = "000"; // crypto.randomUUID();
-    const prefix = "nestDev." + ses + ".";
-    const sd = { ses: ses };
-    const wndf = "popup,noopener,noreferrer";
-    const session_data = jose.util.base64url.encode(JSON.stringify(sd));
-    const sesdata = {
-        ses: ses,
-        signkey: signkey,
-        enckey: false,
-        uri: uri,
-        cnt: 0
-    };
-    window.localStorage.setItem(prefix + "out", "0");
-    window.localStorage.setItem(prefix + "outbox", "false");
-    window.localStorage.setItem(prefix + "cb", JSON.stringify(uri));
-    post(ses, 0, {}); // Init inbox
-    sesdata.wnd = window.open(BASEURL + "/cnt/talk.html#" + session_data, wndf);
-    sessions[ses] = sesdata;
-    return ses;
-}
-
 async function encryptpayload(ses, input){
     if(sessions[ses].enckey){
         const enc = await jose.JWE.createEncrypt({format: "compact"},
@@ -207,9 +187,41 @@ async function runrequest(ses, func, input){
     return msg;
 }
 
-async function conninit(devicekey){
+async function setDeviceKey(e){
+    const devicekeytemp = devicekeyEl.value;
+    /* Remove whitespaces */
+    const devicekeystr = devicekeytemp.replace("\n","").replace("\t","").replace(" ","");
+    devicekey = JSON.parse(jose.util.base64url.decode(devicekeystr));
+    console.log("BaseURL", BASEURL);
+
+    // FIXME: Register session
     const signkey = await jose.JWK.asKey(devicekey.k);
-    const ses = await newsession(devicekey.u, signkey);
+    const uri = devicekey.u;
+    const ses = "000"; // FIXME: crypto.randomUUID();
+    const prefix = "nestDev." + ses + ".";
+    const sd = { ses: ses };
+    const wndf = "noopener,noreferrer";
+    const session_data = jose.util.base64url.encode(JSON.stringify(sd));
+    const sesdata = {
+        ses: ses,
+        signkey: signkey,
+        enckey: false,
+        uri: uri,
+        cnt: 0
+    };
+    window.localStorage.setItem(prefix + "out", "0");
+    window.localStorage.setItem(prefix + "outbox", "false");
+    window.localStorage.setItem(prefix + "cb", JSON.stringify(uri));
+    post(ses, 0, {}); // Init inbox
+    runlinkEl.setAttribute("href", BASEURL + "/cnt/talk.html#" + session_data);
+    runlinkEl.setAttribute("_session", ses);
+    sessions[ses] = sesdata;
+    setdevicekeyEl.disabled = true;
+    
+}
+
+async function onLinkClick(e){
+    const ses = runlinkEl.getAttribute("_session");
     const ek = await runrequest(ses, "ksy0", false);
     const enckey = await jose.JWK.asKey(ek);
     sessions[ses].enckey = enckey;
@@ -220,19 +232,9 @@ async function conninit(devicekey){
     await newRTC(ses, desc);
 }
 
-async function onClick(e){
-    const devicekeytemp = devicekeyEl.value;
-    /* Remove whitespaces */
-    const devicekeystr = devicekeytemp.replace("\n","").replace("\t","").replace(" ","");
-    const devicekey = JSON.parse(jose.util.base64url.decode(devicekeystr));
-    console.log("BaseURL", BASEURL);
-    console.log("Run", devicekey);
-    runbuttonEl.disabled = true;
-    conninit(devicekey); /* Async */
-}
-
 async function onLoad(e){
-    runbuttonEl.addEventListener("click", onClick);
+    setdevicekeyEl.addEventListener("click", setDeviceKey);
+    runlinkEl.addEventListener("click", onLinkClick);
 }
 
 addEventListener("load", onLoad);
