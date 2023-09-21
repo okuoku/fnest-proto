@@ -11,6 +11,11 @@ const sessions = {};
 const waiters = {};
 let devicekey = false; // FIXME: Allow multiple keys
 
+/* Detect default hash */
+if(window.location.hash.startsWith("#dk=")){
+    devicekeyEl.value = window.location.hash.replace("#dk=","");
+}
+
 /* WebRTC states */
 const ICE_SERVERS = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -205,6 +210,8 @@ async function setDeviceKey(e){
     const devicekeystr = devicekeytemp.replace("\n","").replace("\t","").replace(" ","");
     devicekey = JSON.parse(jose.util.base64url.decode(devicekeystr));
     console.log("BaseURL", BASEURL);
+
+    window.location.hash = "#dk=" + devicekeystr;
 
     // FIXME: Register session
     const signkey = await jose.JWK.asKey(devicekey.k);
