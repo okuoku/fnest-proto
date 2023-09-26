@@ -2,6 +2,7 @@ import ndc from "node-datachannel";
 import jose from "node-jose";
 import crypto from "crypto";
 import fs from "fs";
+import tester from "./test_bandwidth_node.mjs";
 
 // Read config and keyblob
 const keys = JSON.parse(fs.readFileSync("./keys.json"));
@@ -96,6 +97,7 @@ function new_session(){ // => UUID
 
         // Activate
         dc = conn.createDataChannel("default");
+        tester.dc_tester(dc);
     }
 
 
@@ -188,7 +190,7 @@ async function mw_con(ctx, next){
     }
 }
 
-ndc.initLogger("Debug");
+//ndc.initLogger("Debug");
 init();
 
 export default {

@@ -1,7 +1,9 @@
 import jose from "node-jose";
+import tester from "../../test_bandwidth_browser.mjs";
 
 const setdevicekeyEl = document.getElementById("setdevicekey");
 const runlinkEl = document.getElementById("runlink");
+const dataareaEl = document.getElementById("dataarea");
 
 const devicekeyEl = document.getElementById("devicekey");
 const BASEURL = window.location.protocol + "//" +
@@ -44,7 +46,20 @@ async function newRTC(ses,req){
     }
 
     peer.ondatachannel = function(c){
+        let prevtime = 0;
+        let prevsize = 0;
         console.log("On dataChannel", c);
+        tester.dc_tester(c.channel, function(data){
+            console.log("Data", data);
+            const res = JSON.parse(data);
+            const nowtime = res.curtime - prevtime;
+            const nowsize = res.sent - prevsize;
+
+            const mibparsec = nowsize / nowtime * 1000 / 1024 / 1024;
+            dataareaEl.innerText = `${mibparsec} MiB/sec`;
+            prevtime = res.curtime;
+            prevsize = res.sent;
+        });
     }
 
 
