@@ -1,9 +1,6 @@
-import nodeDataChannel from "node-datachannel";
-import jose from "node-jose";
 import {serve} from "@hono/node-server";
 import {serveStatic} from "@hono/node-server/serve-static";
 import {Hono} from "hono";
-import crypto from "crypto";
 import devmw from "./nestdevicemw.mjs";
 
 const httpApp = new Hono(); // Port: 3040
