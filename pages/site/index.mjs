@@ -3,6 +3,7 @@ import tester from "../../test_bandwidth_browser.mjs";
 
 const setdevicekeyEl = document.getElementById("setdevicekey");
 const runlinkEl = document.getElementById("runlink");
+const infoareaEl = document.getElementById("infoarea");
 const dataareaEl = document.getElementById("dataarea");
 
 const devicekeyEl = document.getElementById("devicekey");
@@ -27,6 +28,7 @@ const RTCconnections = {};
 async function newRTC(ses,req){
     const peer = new RTCPeerConnection(ICE_SERVERS);
     const ident = req.ident;
+    const uri = sessions[ses].uri;
 
     peer.onicegatheringstatechange = async function(e){
         if(peer.iceGatheringState == "complete"){
@@ -56,6 +58,7 @@ async function newRTC(ses,req){
             const nowsize = res.sent - prevsize;
 
             const mibparsec = nowsize / nowtime * 1000 / 1024 / 1024;
+            infoareaEl.innerText = `Device: ${uri}`;
             dataareaEl.innerText = `${mibparsec} MiB/sec`;
             prevtime = res.curtime;
             prevsize = res.sent;
