@@ -25,7 +25,7 @@ Provided `nodeserv.mjs` will listen `0.0.0.0:3040` for HTTP connection.
 
 ## Device key
 
-Device key is a JWSed JSON object that contains URI for the device HTTP page and device's EC public key.
+Device key is a base64url JSON object that contains URI for the device HTTP page and device's EC public key.
 
 ```
 $ node showkey.mjs
