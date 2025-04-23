@@ -45,7 +45,7 @@ async function onLoad(e){
   const response_data = base64uri.encode(br);
 
   /* Navigate back to nestsite */
-  window.location.href = target_data.cb + "#" + response_data;
+  window.location.replace(target_data.cb + "#" + response_data);
   return;
 }
 

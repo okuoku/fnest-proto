@@ -76,7 +76,7 @@ function action(func, data){
 
         const target_data = base64uri.encode(JSON.stringify(req));
 
-        window.location.href = cb + "#" + target_data;
+        window.location.replace(cb + "#" + target_data);
     }
 }
 
