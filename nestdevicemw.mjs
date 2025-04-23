@@ -7,7 +7,7 @@ import tester from "./test_bandwidth_node.mjs";
 // Read config and keyblob
 const keys = JSON.parse(fs.readFileSync("./keys.json"));
 const cfg = JSON.parse(fs.readFileSync("./config.json"));
-const SESSION_TIMEOUT = 10 * 1000; // in MS
+const SESSION_TIMEOUT = 30 * 1000; // in MS
 
 let keystore = {}; // Filled in init()
 let pubkey_ksy0 = {}; // Filled in init()
