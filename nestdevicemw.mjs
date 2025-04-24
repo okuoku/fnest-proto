@@ -7,7 +7,7 @@ import tester from "./test_bandwidth_node.mjs";
 // Read config and keyblob
 const keys = JSON.parse(fs.readFileSync("./keys.json"));
 const cfg = JSON.parse(fs.readFileSync("./config.json"));
-const SESSION_TIMEOUT = 30 * 1000; // in MS
+const SESSION_TIMEOUT = 120 * 1000; // in MS
 
 let keystore = {}; // Filled in init()
 let pubkey_ksy0 = {}; // Filled in init()
@@ -19,15 +19,17 @@ const sessions = {};
 
 function new_session(){ // => UUID
     const uuid = crypto.randomUUID();
-    let state = "pre-init";
 
     let sdpwaiter = false;
     let sdperrorwaiter = false;
     let sdpfinalized = false;
     let currentsdp = false;
     let currentcandidates = [];
+    let sentcandidates = 0;
     let conn = false;
     let dc = false;
+
+    let remote_candidate_queue = [];
 
     if(sessions[uuid]){
         throw "???";
@@ -37,24 +39,42 @@ function new_session(){ // => UUID
         return {
             d: currentsdp,
             c: currentcandidates,
+            f: sdpfinalized,
             ident: uuid
         };
     }
 
+    function latch_sdpevent(){
+        if(sdpwaiter){
+            sdpwaiter(iceresult());
+            sdpwaiter = false;
+            sdperrorwaiter = false;
+        }
+    }
+
     function getsdp(){
         return new Promise((res, rej) => {
+            console.log("GetSDP", uuid);
             if(sessions[uuid]){
                 if(sdpfinalized){
-                    res(iceresult);
+                    console.log("SDP Finalized", uuid, iceresult());
+                    res(iceresult());
+                }else if(currentcandidates.length != sentcandidates){
+                    console.log("SDP progress", uuid, iceresult(), sentcandidates, currentcandidates.length);
+                    sentcandidates = currentcandidates.length;
+                    res(iceresult());
                 }else{
+                    /* Wait for the next event */
                     sdpwaiter = function(result){
                         sdpwaiter = false;
                         sdperrorwaiter = false;
+                        console.log("SDP Result", uuid, result);
                         res(result);
                     };
                     sdperrorwaiter = function(exp){
                         sdpwaiter = false;
                         sdperrorwaiter = false;
+                        console.log("SDP Error", uuid, exp);
                         rej(exp);
                     };
                 }
@@ -77,20 +97,21 @@ function new_session(){ // => UUID
         conn = new ndc.PeerConnection(uuid, opts);
 
         conn.onLocalDescription((sdp, type) => {
+            console.log("SDP onLocalDescription", sdp, type);
             currentsdp = sdp;
+            latch_sdpevent();
         });
         conn.onLocalCandidate((candidate, mid) => {
+            console.log("SDP onLocalCandidate", candidate, mid);
             currentcandidates.push({c: candidate, m: mid});
+            latch_sdpevent();
         });
         conn.onGatheringStateChange((state) => {
+            console.log("SDP onGatheringStateChange", state);
             if(sessions[uuid]){
                 if(state == "complete"){
                     sdpfinalized = true;
-                    if(sdpwaiter){
-                        sdpwaiter(iceresult());
-                        sdpwaiter = false;
-                        sdperrorwaiter = false;
-                    }
+                    latch_sdpevent();
                 }
             }
         });
@@ -103,27 +124,30 @@ function new_session(){ // => UUID
 
     async function handle_peer_ice(input){
         const sdp = input.s;
-        console.log(sdp);
+        console.log("Peer", uuid, sdp);
         conn.setRemoteDescription(sdp, "answer");
     }
 
     async function request(input){ // => res
         console.log("Con request", input);
-        switch(state) {
-            case "pre-init":
-                if(input.req == "new-connection"){
-                    state = "wait-peer-ice";
-                    begin_session();
-                    return await getsdp();
-                }else{
-                    throw "???";
-                }
-            case "wait-peer-ice":
+        switch(input.req){
+            case "new-connection":
+                begin_session();
+                return await getsdp([]);
+            case "poll-sdp":
+                return await getsdp(input.c);
+            case "peer-ice":
                 await handle_peer_ice(input);
                 return {
                     res: "done",
                     ident: uuid
                 };
+            case "complete":
+                delete_session();
+                return {
+                    res: "done",
+                    ident: uuid
+                }
             default:
                 throw "???";
         }

@@ -25,26 +25,37 @@ const ICE_SERVERS = {
 };
 const RTCconnections = {};
 
-async function newRTC(ses,req){
+async function newRTC(ses, initial_res){
     const peer = new RTCPeerConnection(ICE_SERVERS);
-    const ident = req.ident;
+    const ident = initial_res.ident;
     const uri = sessions[ses].uri;
+
+    let remote_offer = initial_res.d;
+    let remote_candidates = initial_res.c;
+    let remote_offer_done = false;
+    let remote_ice_done = initial_res.f;
+    let local_candidates_queue = [];
+    let local_ice_done = false;
 
     peer.onicegatheringstatechange = async function(e){
         if(peer.iceGatheringState == "complete"){
-            console.log("Sending answer", peer.localDescription);
-            await runrequest(ses, "con", {
-                req: "peer-ice",
-                s: peer.localDescription.sdp,
-                ident: ident
-            });
+        }
+    }
+
+    peer.oniceconnectionstatechange = function(){
+        if (peer.iceConnectionState === "connected" || 
+            peer.iceConnectionState === "completed") {
             /* We're done */
-            await closesession(ses);
+            local_ice_done = true;
         }
     }
 
     peer.onicecandidate = function(e){
         console.log("On ice candidate", e);
+        if(e.candidate){
+            const cd = e.candidate;
+            local_candidates_queue.push({c: cd.candidate, m: cd.sdpMid});
+        }
     }
 
     peer.ondatachannel = function(c){
@@ -65,24 +76,64 @@ async function newRTC(ses,req){
         });
     }
 
+    for(;;){
+        if(remote_offer){
+            if(! remote_offer_done){
+                const desc = {
+                    type: "offer",
+                    sdp: remote_offer
+                };
+                await peer.setRemoteDescription(new RTCSessionDescription(desc));
+                const answer = await peer.createAnswer();
+                await peer.setLocalDescription(answer);
 
-    const desc = {
-        type: "offer",
-        sdp: req.d
-    };
-    await peer.setRemoteDescription(new RTCSessionDescription(desc));
+                console.log("Sending answer", peer.localDescription);
+                await runrequest(ses, "con", {
+                    req: "peer-ice",
+                    s: peer.localDescription.sdp,
+                    ident: ident
+                });
 
+                remote_offer_done = true;
+            }
 
-    for(const idx in req.c){
-        const candidate = req.c[idx].c;
-        const mid = req.c[idx].m;
-        console.log("Add candidate", idx, candidate, mid);
-        const c = new RTCIceCandidate({candidate: candidate, sdpMid: mid});
-        peer.addIceCandidate(c);
+            for(const idx in remote_candidates){
+                const candidate = remote_candidates[idx].c;
+                const mid = remote_candidates[idx].m;
+                console.log("Add candidate", idx, candidate, mid);
+                const c = new RTCIceCandidate({candidate: candidate, 
+                                              sdpMid: mid});
+                peer.addIceCandidate(c);
+            }
+            remote_candidates = [];
+        }
+
+        if(local_ice_done){
+            await runrequest(ses, "con", {
+                req: "complete",
+                ident: ident
+            });
+            await closesession(ses);
+            break;
+        }
+
+        if(remote_ice_done){
+            // Wait a bit to make sure the connection settle
+            await new Promise(x => setTimeout(x, 500));
+        }else{
+            const queue = local_candidates_queue;
+            local_candidates_queue = [];
+            let next = await runrequest(ses, "con", {
+                req: "poll-sdp",
+                ident: ident,
+                c: queue
+            });
+
+            remote_offer = next.d;
+            remote_candidates = next.c;
+            remote_ice_done = next.f;
+        }
     }
-
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
 }
 
 
@@ -265,7 +316,7 @@ async function onLinkClick(e){
 
     /* Create RTC session */
     const desc = await runrequest(ses, "con", {req: "new-connection"});
-    console.log("Got desc", desc);
+    console.log("Got initial desc", desc);
     await newRTC(ses, desc);
 }
 
