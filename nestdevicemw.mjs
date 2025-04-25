@@ -30,6 +30,7 @@ function new_session(){ // => UUID
     let dc = false;
 
     let remote_candidate_queue = [];
+    let connection_complete = false;
 
     if(sessions[uuid]){
         throw "???";
@@ -62,6 +63,9 @@ function new_session(){ // => UUID
                 }else if(currentcandidates.length != sentcandidates){
                     console.log("SDP progress", uuid, iceresult(), sentcandidates, currentcandidates.length);
                     sentcandidates = currentcandidates.length;
+                    res(iceresult());
+                }else if(connection_complete){
+                    /* Latch event immediately */
                     res(iceresult());
                 }else{
                     /* Wait for the next event */
@@ -113,6 +117,13 @@ function new_session(){ // => UUID
                     sdpfinalized = true;
                     latch_sdpevent();
                 }
+            }
+        });
+        conn.onStateChange((state) => {
+            console.log("LDC state change", state);
+            if(state === "connected"){
+                connection_complete = true;
+                latch_sdpevent();
             }
         });
 
