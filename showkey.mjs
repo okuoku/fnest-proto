@@ -1,21 +1,26 @@
-import jose from "node-jose";
+import * as jose from "jose";
+import { createPublicKey } from 'crypto';
 import fs from "fs";
 
 
 async function run(){
     const ks = JSON.parse(fs.readFileSync("./keys.json"));
     const cfg = JSON.parse(fs.readFileSync("./config.json"));
-    const keystore = await jose.JWK.asKeyStore(ks);
 
-    const eckey = keystore.all({kty: "EC"})[0];
-    const rsakey = keystore.all({kty: "RSA"})[0];
+    for(const idx in ks.keys){
+        const k = ks.keys[idx];
+        if(k.kty == "EC"){ /* EC Key pair */
+            const key = await createPublicKey({key: k, format: "jwk"});
+            const eckey = await jose.exportJWK(key);
+            let devicekey = {};
 
-    let devicekey = {};
+            devicekey.u = cfg.deviceuri;
+            devicekey.k = eckey;
 
-    devicekey.u = cfg.deviceuri;
-    devicekey.k = eckey.toJSON(); // Public key only
-
-    console.log("Devicekey", jose.util.base64url.encode(JSON.stringify(devicekey)));
+            console.log("Devicekey", jose.base64url.encode(JSON.stringify(devicekey)));
+            return;
+        }
+    }
 }
 
 run();
