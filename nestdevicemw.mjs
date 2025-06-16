@@ -1,5 +1,5 @@
 import ndc from "node-datachannel";
-import jose from "node-jose";
+import * as jose from "jose";
 import crypto from "crypto";
 import fs from "fs";
 import tester from "./test_bandwidth_node.mjs";
@@ -9,10 +9,9 @@ const keys = JSON.parse(fs.readFileSync("./keys.json"));
 const cfg = JSON.parse(fs.readFileSync("./config.json"));
 const SESSION_TIMEOUT = 120 * 1000; // in MS
 
-let keystore = {}; // Filled in init()
 let pubkey_ksy0 = {}; // Filled in init()
-let signkey = {}; // Filled in init()
 let signer = {}; // Filled in init()
+let decrypter = {}; // Filled in init()
 
 // Sessions
 const sessions = {};
@@ -176,14 +175,34 @@ function new_session(){ // => UUID
 }
 
 async function init(){
-    keystore = await jose.JWK.asKeyStore(keys);
-    pubkey_ksy0 = keystore.all({kty: "RSA"})[0];
-    signkey = keystore.all({kty: "EC"})[0];
+    let rsakey = {};
+    let eckey = {};
+    // Export RSA Pubkey (jose does not have pubkey extraction)
+    for(const idx in keys.keys){
+        const k = keys.keys[idx];
+        if(k.kty == "RSA"){ /* RSA Key pair */
+            rsakey = await crypto.createPrivateKey({key: k, format: "jwk"});
+            const pk = await crypto.createPublicKey({key: k, format: "jwk"});
+            pubkey_ksy0 = await jose.exportJWK(pk);
+            console.log("Pubkey found", pubkey_ksy0);
+        }
+        if(k.kty == "EC"){ /* EC Key pair */
+            eckey = await crypto.createPrivateKey({key: k, format: "jwk"});
+        }
+    }
     signer = async function(obj){
-        const res = await jose.JWS.createSign({format: "compact"}, signkey).
-            update(JSON.stringify(obj)).
-            final();
+        const tgt = JSON.stringify(obj);
+        const buf = new TextEncoder().encode(tgt);
+        const res = await new jose.CompactSign(buf)
+            .setProtectedHeader({alg: "ES256"})
+            .sign(eckey);
         return res;
+    }
+    decrypter = async function(obj){
+        const dec = await jose.compactDecrypt(obj, rsakey);
+        const out = new TextDecoder().decode(dec.plaintext);
+        console.log("Decrypt", dec.protectedHeader, out);
+        return out;
     }
 }
 
@@ -200,9 +219,8 @@ async function mw_con(ctx, next){
     try {
         const body0 = await ctx.req.text();
         console.log("Con reqbody", body0);
-        const body1 = await jose.JWE.createDecrypt(keystore, opts).
-            decrypt(body0);
-        const body = JSON.parse(body1.payload);
+        const body1 = await decrypter(body0);
+        const body = JSON.parse(body1);
         console.log("Input(con)", body);
         if(body.req && body.req == "new-connection"){
             const ident = new_session();
