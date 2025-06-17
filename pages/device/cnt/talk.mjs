@@ -1,4 +1,12 @@
-import base64uri from "../../../base64uri.mjs";
+function base64uri_encode(str){
+    const p = btoa(str);
+    return p.replace("+","-").replace("/","_");
+}
+
+function base64uri_decode(str){
+    const p = str.replace("-","+").replace("_","/");
+    return atob(p);
+}
 
 function myinput(){
   try{
@@ -7,7 +15,7 @@ function myinput(){
     if(str == ""){
       return {};
     }else{
-      const s = base64uri.decode(str.substring(1));
+      const s = base64uri_decode(str.substring(1));
       return JSON.parse(s);
     }
   }catch(e){
@@ -42,7 +50,7 @@ async function onLoad(e){
     ses: target_data.ses
   };
   const br = JSON.stringify(b);
-  const response_data = base64uri.encode(br);
+  const response_data = base64uri_encode(br);
 
   /* Navigate back to nestsite */
   window.location.replace(target_data.cb + "#" + response_data);
