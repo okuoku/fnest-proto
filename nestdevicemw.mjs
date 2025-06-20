@@ -3,10 +3,11 @@ import * as jose from "jose";
 import crypto from "crypto";
 import fs from "fs";
 import tester from "./test_bandwidth_node.mjs";
+import fnestcfg from "./fnestconfig.mjs";
 
 // Read config and keyblob
-const keys = JSON.parse(fs.readFileSync("./keys.json"));
-const cfg = JSON.parse(fs.readFileSync("./config.json"));
+const keys = fnestcfg.keys;
+const cfg = fnestcfg.cfg;
 const SESSION_TIMEOUT = 120 * 1000; // in MS
 
 let pubkey_ksy0 = {}; // Filled in init()

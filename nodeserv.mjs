@@ -2,12 +2,10 @@ import {serve} from "@hono/node-server";
 import {serveStatic} from "@hono/node-server/serve-static";
 import {Hono} from "hono";
 import devmw from "./nestdevicemw.mjs";
-import fs from "fs";
+import fnestcfg from "./fnestconfig.mjs";
 import coturn from "./run_coturn.mjs";
 
 const httpApp = new Hono(); // Port: 3040
-
-const cfg = JSON.parse(fs.readFileSync("./config.json"));
 
 async function init(){
     httpApp.post("/con", devmw.con);
@@ -15,7 +13,7 @@ async function init(){
 
     httpApp.use("/*", serveStatic({root: "./pages/device/"}));
 
-    if(cfg.coturn){
+    if(fnestcfg.cfg.coturn){
         coturn.run_coturn(cfg.coturn);
     }
 
