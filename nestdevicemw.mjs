@@ -6,8 +6,8 @@ import tester from "./test_bandwidth_node.mjs";
 import fnestcfg from "./fnestconfig.mjs";
 
 // Read config and keyblob
-const keys = fnestcfg.keys;
-const cfg = fnestcfg.cfg;
+const keys = await fnestcfg.keys();
+const cfg = await fnestcfg.cfg();
 const SESSION_TIMEOUT = 120 * 1000; // in MS
 
 let pubkey_ksy0 = {}; // Filled in init()

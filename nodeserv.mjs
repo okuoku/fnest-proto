@@ -7,13 +7,15 @@ import coturn from "./run_coturn.mjs";
 
 const httpApp = new Hono(); // Port: 3040
 
+const cfg = await fnestcfg.cfg();
+
 async function init(){
     httpApp.post("/con", devmw.con);
     httpApp.post("/ksy0", devmw.ksy0);
 
     httpApp.use("/*", serveStatic({root: "./pages/device/"}));
 
-    if(fnestcfg.cfg.coturn){
+    if(cfg.coturn){
         coturn.run_coturn(cfg.coturn);
     }
 
