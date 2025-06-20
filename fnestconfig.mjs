@@ -1,5 +1,6 @@
 import fs from "fs";
 import * as jose from "jose";
+import { createPublicKey } from 'crypto';
 
 /* Polyfill __dirname */
 import { fileURLToPath } from 'url';
@@ -34,6 +35,24 @@ async function keygen(){
     return obj;
 }
 
+/* genkeystr */
+async function genkeystr(){
+    for(const idx in keysval.keys){
+        const k = keysval.keys[idx];
+        if(k.kty == "EC"){ /* EC Key pair */
+            const key = await createPublicKey({key: k, format: "jwk"});
+            const eckey = await jose.exportJWK(key);
+            let devicekey = {};
+
+            devicekey.u = cfgval.deviceuri;
+            devicekey.k = eckey;
+
+            return jose.base64url.encode(JSON.stringify(devicekey));
+        }
+    }
+}
+
+
 
 async function init(){
     if(! cfginit){
@@ -65,6 +84,13 @@ async function init(){
             }
         }
         console.log("Config init", cfgval);
+
+        /* Write keystr */
+        if(statedir_env){
+            const keystr = await genkeystr();
+            console.log("Devicekey", keystr);
+            fs.writeFileSync(statedir + "/devicekey.txt", keystr);
+        }
     }
     cfginit = true;
 }
