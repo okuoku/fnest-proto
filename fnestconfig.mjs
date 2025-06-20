@@ -60,6 +60,7 @@ async function init(){
             if(! external_ip4){
                 console.log("ERROR: FNEST_EXTERNAL_IP4 required to enable COTURN");
             }else{
+                cfgval.coturn = {};
                 cfgval.coturn.ip4 = external_ip4;
             }
         }
