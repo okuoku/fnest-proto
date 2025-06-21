@@ -132,6 +132,18 @@ function new_session(){ // => UUID
         tester.dc_tester(dc);
     }
 
+    function add_preflight(sdp){
+        const preflight = {sdp: sdp};
+        if(cfg.coturn){
+            preflight.turn = {
+                ip4: cfg.coturn.ip4,
+                u: "user",
+                p: "password"
+            };
+        }
+        return preflight;
+    }
+
 
     async function handle_peer_ice(input){
         const sdp = input.s;
@@ -144,7 +156,7 @@ function new_session(){ // => UUID
         switch(input.req){
             case "new-connection":
                 begin_session();
-                return await getsdp([]);
+                return add_preflight(await getsdp([]));
             case "poll-sdp":
                 return await getsdp(input.c);
             case "peer-ice":
