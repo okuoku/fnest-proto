@@ -7,8 +7,10 @@ function run_coturn(opts){
         "-v",
         "--no-udp",
         "--no-stun",
+        //"--cli-password", "admin",
         "-u", "user:pass",
         "-a",
+        "-f", // fingerprint
         "-L", "0.0.0.0",
         "-E", "0.0.0.0",
         "-X", opts.ip4 + "/0.0.0.0"

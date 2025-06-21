@@ -95,9 +95,12 @@ function new_session(){ // => UUID
     }
 
     function begin_session(){
-        const opts = {
+        /*
+        let opts = {
             iceServers: ["stun:stun.l.google.com:19302"]
         };
+        */
+        let opts = {"iceServers": [] };
         conn = new ndc.PeerConnection(uuid, opts);
 
         conn.onLocalDescription((sdp, type) => {
@@ -138,7 +141,7 @@ function new_session(){ // => UUID
             preflight.turn = {
                 ip4: cfg.coturn.ip4,
                 u: "user",
-                p: "password"
+                p: "pass"
             };
         }
         return preflight;
