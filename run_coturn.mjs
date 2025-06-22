@@ -4,7 +4,7 @@ function run_coturn(opts){
     console.log("Starting coturn", opts);
     const child = spawn("turnserver", [
         "-n",
-        "-v",
+        // "-v",
         "--no-udp",
         "--no-stun",
         //"--cli-password", "admin",
