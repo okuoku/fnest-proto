@@ -9,6 +9,7 @@ function run_coturn(opts){
         "--no-stun",
         //"--cli-password", "admin",
         "-u", "user:pass",
+        "-r", "localdomain",
         "-a",
         "-f", // fingerprint
         "-L", "0.0.0.0",
