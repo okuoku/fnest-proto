@@ -8,20 +8,29 @@ function base64uri_decode(str){
     return atob(p);
 }
 
+function striphistory(){
+    /* Do not record history with hash */
+    const clean = window.location.origin
+        + window.location.pathname
+        + window.location.search;
+    window.history.replaceState(null, "", clean);
+}
+
 function myinput(){
-  try{
     const log = document.location;
     const str = location.hash;
-    if(str == ""){
-      return {};
-    }else{
-      const s = base64uri_decode(str.substring(1));
-      return JSON.parse(s);
+    striphistory();
+    try{
+        if(str == ""){
+            return {};
+        }else{
+            const s = base64uri_decode(str.substring(1));
+            return JSON.parse(s);
+        }
+    }catch(e){
+        console.warn("Invalid hash");
+        return {};
     }
-  }catch(e){
-    console.warn("Invalid hash");
-    return {};
-  }
 }
 
 async function do_req(api, obj){
